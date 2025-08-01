@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <!-- Welcome Message for Professional -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <span class="h4">Welcome, User {{ session['username'] }}!</span>
+            <a href="{{ url_for('logout') }}" class="btn btn-danger">Logout</a>
+        </div>
+    <div class="container mt-5">
+        <h2 class="text-center mb-4">Explore Our Services</h2>
+        
+        <!-- Search Bar -->
+        <form method="POST" action="/customer/dashboard" class="mb-4">
+            <div class="input-group">
+                <input type="text" name="search" class="form-control" placeholder="Search for a service by name or ID..." value="{{ search_query }}">
+                <button class="btn btn-primary" type="submit">Search</button>
+            </div>
+        </form>
+
+        <!-- Services Grid -->
+        <div class="row">
+            {% for service in services %}
+                <div class="col-md-4 mb-4">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ service.sname }}</h5>
+                            <p class="card-text">
+                                <strong>Base Price:</strong> ${{ service.base_price }}<br>
+                                <strong>Details:</strong> {{ service.details }}
+                            </p>
+                            <form method="POST" action="/user/request_service/{{ service.sid }}">
+                                <button type="submit" class="btn btn-success w-100">Request Service</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- Previous Requests Section -->
+        <h3 class="mt-5">Your Previous Requests</h3>
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Service Name</th>
+                        <th>Status</th>
+                        <th>Request Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for request in user_requests %}
+                        <tr>
+                            <td>{{ request.service.sname }}</td>
+                            <td>
+                                {% if request.status == 'Pending' %}
+                                    <span class="badge bg-warning">Pending</span>
+                                {% elif request.status == 'Accepted' %}
+                                    <span class="badge bg-success">Accepted</span>
+                                {% elif request.status == 'Completed' %}
+                                    <span class="badge bg-primary">Completed</span>
+                                {% elif request.status == 'Closed' %}
+                                    <span class="badge bg-secondary">Closed</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ request.request_date.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                            <td>
+                                {% if request.status == 'Pending' %}
+                                    <!-- Delete button for pending requests -->
+                                    <form method="POST" action="/user/delete_request/{{ request.id }}" style="display:inline;">
+                                        <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                                    </form>
+                                {% endif %}
+                                {% if request.status == 'Completed' %}
+                                    <!-- Form to mark as closed and add a review -->
+                                    <form method="POST" action="/user/close_request/{{ request.id }}">
+                                        <div class="mb-3">
+                                            <label for="review" class="form-label">Write a Review</label>
+                                            <textarea class="form-control" id="review" name="review" rows="3" required></textarea>
+                                        </div>
+                                        <button type="submit" class="btn btn-primary btn-sm">Mark as Closed</button>
+                                    </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            {% if not user_requests %}
+                <div class="alert alert-warning text-center">You have not made any service requests yet.</div>
+            {% endif %}
+        </div>
+
+        <!-- No Results Found for Services -->
+        {% if not services %}
+            <div class="alert alert-warning text-center">No services found matching your search query.</div>
+        {% endif %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
